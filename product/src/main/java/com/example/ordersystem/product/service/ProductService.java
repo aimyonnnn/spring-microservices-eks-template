@@ -5,10 +5,16 @@ import com.example.ordersystem.product.dto.ProductRegisterDto;
 import com.example.ordersystem.product.dto.ProductResponseDto;
 import com.example.ordersystem.product.dto.ProductUpdateStockDto;
 import com.example.ordersystem.product.repository.ProductRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jboss.logging.MDC;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -26,10 +32,8 @@ public class ProductService {
             String userId
     ) {
 
-        Product product = productRepository.save(
+        return productRepository.save(
                 ProductRegisterDto.toEntity(Long.parseLong(userId)));
-
-        return product;
     }
 
     public ProductResponseDto productDetail(Long id) {
@@ -54,4 +58,28 @@ public class ProductService {
 
         return product;
     }
+
+    @KafkaListener(topics = "update-stock-topic", containerFactory = "kafkaListener")
+    public void stockConsumer(String message) {
+
+        log.info("재고 업데이트 요청 수신: {}", message);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ProductUpdateStockDto productUpdateStockDto = null;
+
+        try {
+            productUpdateStockDto = objectMapper.readValue(message, ProductUpdateStockDto.class);
+            updateStockQuantity(productUpdateStockDto);
+            log.info("재고 업데이트 완료: ProductId={}", productUpdateStockDto.getProductId());
+
+        } catch (JsonProcessingException e) {
+            log.error("JSON 파싱 실패: {}", e.getMessage());
+            throw new RuntimeException("JSON 파싱 처리에 실패하였습니다.", e);
+
+        } catch (Exception e) {
+            log.error("재고 업데이트 실패: {}", e.getMessage());o
+            throw new RuntimeException("재고 업데이트 처리에 실패하였습니다.", e);
+        }
+    }
+
 }

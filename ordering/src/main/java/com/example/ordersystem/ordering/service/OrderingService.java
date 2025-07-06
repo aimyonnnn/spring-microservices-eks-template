@@ -7,6 +7,7 @@ import com.example.ordersystem.ordering.dto.ProductUpdateStockDto;
 import com.example.ordersystem.ordering.repository.OrderingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -19,19 +20,19 @@ public class OrderingService {
     private final OrderingRepository orderingRepository;
     private final RestTemplate restTemplate;
     private final ProductFeign productFeign;
-//    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OrderingService(
             OrderingRepository orderingRepository,
             RestTemplate restTemplate,
-            ProductFeign productFeign
-//            KafkaTemplate<String, Object> kafkaTemplate
+            ProductFeign productFeign,
+            KafkaTemplate<String, Object>kafkaTemplate
     ) {
 
         this.orderingRepository = orderingRepository;
         this.restTemplate = restTemplate;
         this.productFeign = productFeign;
-//        this.kafkaTemplate = kafkaTemplate;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     // restTemplate
@@ -101,12 +102,13 @@ public class OrderingService {
         orderingRepository.save(ordering);
 
 //        재고 수량 업데이트 요청
-        productFeign.updateProductStock(
-                ProductUpdateStockDto.builder()
-                        .productId(OrderCreateDto.getProductId())
-                        .productQuantity(OrderCreateDto.getProductCount())
-                        .build()
-        );
+        ProductUpdateStockDto productUpdateStockDto = ProductUpdateStockDto.builder()
+                .productId(OrderCreateDto.getProductId())
+                .productQuantity(OrderCreateDto.getProductCount())
+                .build();
+
+//        productFeign.updateProductStock(productUpdateStockDto);
+        kafkaTemplate.send("update-stock-topic", productUpdateStockDto);
 
         return  ordering;
     }
