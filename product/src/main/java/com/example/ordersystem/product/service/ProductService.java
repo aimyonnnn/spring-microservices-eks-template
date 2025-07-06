@@ -77,7 +77,7 @@ public class ProductService {
             throw new RuntimeException("JSON 파싱 처리에 실패하였습니다.", e);
 
         } catch (Exception e) {
-            log.error("재고 업데이트 실패: {}", e.getMessage());o
+            log.error("재고 업데이트 실패: {}", e.getMessage());
             throw new RuntimeException("재고 업데이트 처리에 실패하였습니다.", e);
         }
     }
