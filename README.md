@@ -10,6 +10,7 @@ GitHub Actions 기반의 CI/CD 파이프라인과 Cluster Autoscaler를 지원�
 <img width="6696" height="5542" alt="Image" src="https://github.com/user-attachments/assets/acb2a317-0231-4835-aad9-15ce983ed031" />
 
 ### 서비스 디스커버리 구성
+
 - 로컬: Eureka 서버를 통한 마이크로서비스 디스커버리 및 로드 밸런싱
 - EKS: Kubernetes Service 리소스를 통한 네이티브 서비스 라우팅
 
@@ -132,13 +133,12 @@ kubectl create namespace <your-namespace>
 ```bash
 # Secret 생성
 kubectl create secret generic app-secrets \
-  --from-literal=REDIS_HOST=redis-service \
   --from-literal=DB_HOST=<your-rds-endpoint> \
-  --from-literal=DB_USERNAME=<your-db-username> \
-  --from-literal=DB_PASSWORD=<your-db-password> \
+  --from-literal=DB_PW=<your-db-password> \
   --from-literal=JWT_SECRET=<your-jwt-secret> \
+  --from-literal=JWT_SECRET_RT=<your-jwt-refresh-secret>
   -n <your-namespace>
-  
+
 # Secret 목록 조회
 kubectl get secrets -n <your-namespace>
 
@@ -256,11 +256,12 @@ EKS 노드 그룹의 Auto Scaling Group에 다음 태그를 추가합니다:
    - 유형: OpenID Connect
    - 공급자 URL: EKS 클러스터의 OIDC 제공자 URL 입력
    - 오디언스: `sts.amazonaws.com`
-      - AWS의 보안 토큰 서비스(STS)
-      - AssumeRole, AssumeRoleWithWebIdentity 같은 임시 보안 자격 증명 발급을 담당
-      - cluster-autoscaler Pod가 STS에 Role 사용 요청시 필요
+     - AWS의 보안 토큰 서비스(STS)
+     - AssumeRole, AssumeRoleWithWebIdentity 같은 임시 보안 자격 증명 발급을 담당
+     - cluster-autoscaler Pod가 STS에 Role 사용 요청시 필요
 
 **ID 제공업체 추가 목적**
+
 - AWS가 신뢰할 수 있는 주체가 누구인지를 식별하는 요소
 - EKS 내의 Pod들이 IAM Role을 사용할 수 있도록 하는 과정
 - 제공업체로 추가함으로써 신뢰할 수 있는 주체에게 Role 사용 권한 부여
@@ -290,6 +291,7 @@ EKS 노드 그룹의 Auto Scaling Group에 다음 태그를 추가합니다:
 ```
 
 필요한 정책 연결:
+
 - `AmazonEKSClusterPolicy`
 - `AutoScalingFullAccess`
 - `AmazonEC2FullAccess`
@@ -394,17 +396,20 @@ curl -X POST https://your-domain.com/member-service/member/doLogin \
 ## 🔧 트러블슈팅
 
 ### 인증서 발급 실패
+
 ```bash
 kubectl describe certificate <certificate-name> -n <your-namespace>
 ```
 
 ### Pod 시작 실패
+
 ```bash
 kubectl logs <pod-name> -n <your-namespace>
 kubectl describe pod <pod-name> -n <your-namespace>
 ```
 
 ### 서비스 접근 불가
+
 ```bash
 kubectl get ingress -n <your-namespace>
 kubectl describe ingress <ingress-name> -n <your-namespace>
