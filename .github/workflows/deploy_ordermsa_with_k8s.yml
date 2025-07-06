@@ -1,0 +1,98 @@
+# CHANGE_ME: Replace 'sumin' namespace with your desired namespace in all kubectl commands below
+name: deploy order order-backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout github
+        uses: actions/checkout@v2
+
+      - name: install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "v1.25.9"
+        id: install
+
+      - name: configure aws
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET }}
+          aws-region: ap-northeast-2
+
+      - name: update cluster infomation
+        run: aws eks update-kubeconfig --name my-cluster --region ap-northeast-2
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: gateway build and push docker image to ecr
+        env:
+          REGISTRY: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com # CHANGE_ME
+          REPOSITORY: apigateway
+          IMAGE_TAG: latest
+        run: |
+          docker build \
+          -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+          -f ./apigateway/Dockerfile ./apigateway
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: eks kubectl apply
+        run: |
+          kubectl apply -f ./apigateway/k8s/depl_svc.yml
+          kubectl rollout restart deployment apigateway-depl -n sumin
+
+      - name: member build and push docker image to ecr
+        env:
+          REGISTRY: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com # CHANGE_ME
+          REPOSITORY: member-service
+          IMAGE_TAG: latest
+        run: |
+          docker build \
+          -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+          -f ./member/Dockerfile ./member
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: eks kubectl apply
+        run: |
+          kubectl apply -f ./member/k8s/depl_svc.yml
+          kubectl rollout restart deployment member-depl -n sumin
+
+      - name: order build and push docker image to ecr
+        env:
+          REGISTRY: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com # CHANGE_ME
+          REPOSITORY: ordering-service
+          IMAGE_TAG: latest
+        run: |
+          docker build \
+          -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+          -f ./ordering/Dockerfile ./ordering
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: eks kubectl apply
+        run: |
+          kubectl apply -f ./ordering/k8s/depl_svc.yml
+          kubectl rollout restart deployment ordering-depl -n sumin
+
+      - name: product build and push docker image to ecr
+        env:
+          REGISTRY: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com # CHANGE_ME
+          REPOSITORY: product-service
+          IMAGE_TAG: latest
+        run: |
+          docker build \
+          -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+          -f ./product/Dockerfile ./product
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: eks kubectl apply
+        run: |
+          kubectl apply -f ./product/k8s/depl_svc.yml
+          kubectl rollout restart deployment product-depl -n sumin
