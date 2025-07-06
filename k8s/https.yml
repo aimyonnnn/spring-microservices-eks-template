@@ -1,0 +1,31 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: my-issuer
+  namespace: sumin # CHANGE_ME
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: marigold28927@gmail.com # CHANGE_ME
+    privateKeySecretRef:
+      name: my-issuer
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: server-aimyon-com-tls # CHANGE_ME
+  namespace: sumin # CHANGE_ME
+spec:
+  secretName: server-aimyon-com-tls # CHANGE_ME
+  duration: 2160h # 90day
+  renewBefore: 360h # before 15day
+  issuerRef:
+    name: my-issuer
+    kind: ClusterIssuer
+  commonName: server.aimyon.shop # CHANGE_ME
+  dnsNames:
+    - server.aimyon.shop # CHANGE_ME
