@@ -1,7 +1,6 @@
 # Spring Microservices EKS Template
 
-Spring Cloud 마이크로서비스를 AWS EKS에 배포하고 관리할 수 있도록 구성된 템플릿입니다.
-GitHub Actions 기반의 CI/CD 파이프라인과 Cluster Autoscaler를 지원합니다.
+Spring Cloud 마이크로서비스를 AWS EKS(Kubernetes) 환경에 배포할 수 있는 템플릿입니다.
 
 ## 🏗️ 아키텍처 개요
 
@@ -11,7 +10,7 @@ GitHub Actions 기반의 CI/CD 파이프라인과 Cluster Autoscaler를 지원�
 
 ### 서비스 디스커버리 구성
 
-- 로컬: Eureka 서버를 통한 마이크로서비스 디스커버리 및 로드 밸런싱
+- Local: Eureka 서버를 통한 마이크로서비스 디스커버리 및 로드 밸런싱
 - EKS: Kubernetes Service 리소스를 통한 네이티브 서비스 라우팅
 
 ## 🚀 배포 가이드
@@ -142,7 +141,7 @@ kubectl create secret generic app-secrets \
 # Secret 목록 조회
 kubectl get secrets -n <your-namespace>
 
-# Secret 상세 조회 (인코딩된 상태)
+# Secret 상세 조회
 kubectl get secret app-secrets -o yaml -n <your-namespace>
 
 # Secret 삭제
@@ -356,7 +355,6 @@ git push origin main
 2. 각 마이크로서비스의 Docker 이미지 빌드
 3. ECR에 이미지 푸시
 4. EKS 클러스터에 자동 배포
-5. 배포 상태 확인 및 알림
 
 **배포 확인**
 
@@ -376,22 +374,6 @@ curl -X POST https://your-domain.com/member-service/member/doLogin \
     "password": "12341234"
   }'
 ```
-
-## 📋 배포 전 체크 리스트
-
-배포 전 다음 사항들을 확인하세요:
-
-- [ ] 가비아 도메인 구매 및 Route 53 NS 레코드 등록
-- [ ] IAM 사용자 생성 및 AdministratorAccess 권한 부여
-- [ ] EKS 클러스터 및 노드 그룹 생성
-- [ ] RDS MySQL 인스턴스 생성 및 보안 그룹 설정
-- [ ] ECR 레포지토리 생성 (4개 서비스)
-- [ ] kubectl 및 AWS CLI 설치
-- [ ] kubeconfig 설정
-- [ ] 모든 YAML 파일의 `CHANGE_ME` 부분 수정
-- [ ] GitHub Secrets 설정 (AWS_KEY, AWS_SECRET)
-- [ ] Auto Scaling Group 태그 설정
-- [ ] OIDC 제공자 및 IAM 역할 생성
 
 ## 🔧 트러블슈팅
 
